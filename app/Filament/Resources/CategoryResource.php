@@ -57,7 +57,7 @@ class CategoryResource extends Resource
 
                 Tables\Columns\IconColumn::make('status')
                     ->label('Статус')
-                    ->boolean() // Превращает 1/0 в красивую галочку или крестик
+                    ->boolean()
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('created_at')
