@@ -1,6 +1,7 @@
 <?php
 namespace App\Filament\Resources;
 
+use App\Enums\EmployeeFileType; // Импортируем ваш Enum
 use App\Filament\Resources\EmployeeResource\Pages;
 use App\Models\Employee;
 use Filament\Forms;
@@ -9,8 +10,9 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Split;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Select;
 
 class EmployeeResource extends Resource
 {
@@ -27,6 +29,7 @@ class EmployeeResource extends Resource
     {
         return $form
             ->schema([
+                // ... (Личная информация и Трудоустройство остаются без изменений)
                 Section::make('Личная информация')
                     ->columns(3)
                     ->schema([
@@ -47,7 +50,6 @@ class EmployeeResource extends Resource
                                 ->label('Фамилия')
                                 ->required()
                                 ->maxLength(50),
-
                         ])->columnSpan(2),
                     ]),
 
@@ -81,7 +83,8 @@ class EmployeeResource extends Resource
                             ->required(),
                     ]),
 
-                Section::make('Документы')
+                // Секция с ИНН и Паспортом
+                Section::make('Данные документов')
                     ->collapsed()
                     ->columns(2)
                     ->schema([
@@ -93,9 +96,38 @@ class EmployeeResource extends Resource
                             ->label('ИНН')
                             ->maxLength(20),
                     ]),
+
+                // НОВЫЙ БЛОК: Загрузка файлов (сканов)
+                Section::make('Электронные копии документов')
+                    ->description('Загрузите сканы документов (PDF, PNG, JPG)')
+                    ->schema([
+                        Repeater::make('files')
+                        ->relationship('files')
+                            ->schema([
+
+
+                                FileUpload::make('file_path')
+                                    ->label('Файл')
+                                    ->disk('public')
+                                    ->directory('employee-docs')
+                                    ->storeFileNamesIn('file_name') // Сохранит оригинальное имя в file_name
+                                    ->openable() // Позволит скачать/посмотреть файл
+                                    ->downloadable()
+                                    ->required()
+                                    ->columnSpan(1),
+
+                                Forms\Components\Hidden::make('uploaded_at')
+                                    ->default(now()),
+                            ])
+                            ->columns(2)
+                            ->itemLabel(fn (array $state): ?string => $state['file_name'] ?? 'Новый файл')
+                            ->addActionLabel('Добавить документ')
+                            ->collapsible(),
+                    ]),
             ]);
     }
 
+    // ... (Метод table остается без изменений)
     public static function table(Table $table): Table
     {
         return $table
@@ -105,7 +137,7 @@ class EmployeeResource extends Resource
                     ->circular(),
 
                 Tables\Columns\TextColumn::make('full_name')
-                ->label('ФИО')
+                    ->label('ФИО')
                     ->state(fn (Employee $record): string => "{$record->last_name} {$record->first_name}")
                     ->searchable(['first_name', 'last_name'])
                     ->sortable(),

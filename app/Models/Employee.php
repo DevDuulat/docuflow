@@ -34,6 +34,11 @@ class Employee extends Model
         return $this->belongsTo(Position::class);
     }
 
+    public function files()
+    {
+        return $this->hasMany(EmployeeFile::class);
+    }
+
     public function getFullNameAttribute()
     {
         return $this->first_name . ' ' . $this->last_name;
