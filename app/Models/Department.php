@@ -11,8 +11,8 @@ class Department extends Model
         'location',
     ];
 
-//    public function employees()
-//    {
-//        return $this->hasMany(Employee::class);
-//    }
+    public function employees()
+    {
+        return $this->hasMany(Employee::class);
+    }
 }
