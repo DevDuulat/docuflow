@@ -11,11 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('departments', function (Blueprint $table) {
+        Schema::create('workflow_document', function (Blueprint $table) {
             $table->id();
-            $table->string('name')->unique();
-            $table->string('location')->nullable();
+            $table->foreignId('workflow_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('document_id')->constrained()->cascadeOnDelete();
             $table->timestamps();
+            $table->unique(['workflow_id', 'document_id']);
         });
     }
 
@@ -24,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('departments');
+        Schema::dropIfExists('workflow_document');
     }
 };
