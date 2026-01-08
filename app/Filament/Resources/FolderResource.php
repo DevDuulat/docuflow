@@ -106,9 +106,16 @@ class FolderResource extends Resource
             ])
             ->defaultSort('order_index')
             ->filters([
-                Tables\Filters\SelectFilter::make('parent_id')
-                    ->label('Фильтр по родителям')
-                    ->relationship('parent', 'name'),
+                Tables\Filters\TernaryFilter::make('is_root')
+                    ->label('Уровень')
+                    ->placeholder('Все папки')
+                    ->trueLabel('Только корневые')
+                    ->falseLabel('Только вложенные')
+                    ->queries(
+                        true: fn ($query) => $query->whereNull('parent_id'),
+                        false: fn ($query) => $query->whereNotNull('parent_id'),
+                    )
+                    ->default(true), // По умолчанию показываем только корни
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
@@ -124,6 +131,7 @@ class FolderResource extends Resource
     public static function getRelations(): array
     {
         return [
+            RelationManagers\ChildrenRelationManager::class,
             RelationManagers\DocumentsRelationManager::class,
         ];
     }
