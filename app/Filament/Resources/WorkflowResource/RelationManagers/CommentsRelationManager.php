@@ -32,6 +32,7 @@ class CommentsRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
+            ->poll('3s')
             ->recordTitleAttribute('comment')
             ->columns([
                 Tables\Columns\Layout\Stack::make([
