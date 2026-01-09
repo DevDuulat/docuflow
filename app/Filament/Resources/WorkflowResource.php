@@ -13,7 +13,8 @@ use Filament\Tables\Table;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Tabs;
-
+use Illuminate\Support\Str;
+use Filament\Forms\Set;
 class WorkflowResource extends Resource
 {
     protected static ?string $model = Workflow::class;
@@ -31,7 +32,6 @@ class WorkflowResource extends Resource
             ->schema([
                 Tabs::make('Детали процесса')
                     ->tabs([
-                        // ВКЛАДКА 1: Основные настройки
                         Tabs\Tab::make('Настройка процесса')
                             ->icon('heroicon-o-cog-6-tooth')
                             ->schema([
@@ -40,7 +40,16 @@ class WorkflowResource extends Resource
                                     ->schema([
                                         Forms\Components\TextInput::make('title')
                                             ->label('Тема процесса')
-                                            ->required(),
+                                            ->required()
+                                            ->live(onBlur: true) // Отправляет данные на сервер при потере фокуса
+                                            ->afterStateUpdated(fn (Set $set, ?string $state) => $set('slug', Str::slug($state))),
+
+                                        Forms\Components\TextInput::make('slug')
+                                            ->label('Технический адрес (Slug)')
+                                            ->required()
+                                            ->unique(ignoreRecord: true)
+                                            ->disabled() // Пользователь видит, но не может менять вручную
+                                            ->dehydrated(),
                                         Forms\Components\Select::make('workflow_status')
                                             ->label('Статус процесса')
                                             // Используем метод label() вашего Enum
@@ -55,7 +64,7 @@ class WorkflowResource extends Resource
                                     ]),
                             ]),
 
-                        // ВКЛАДКА 2: Участники (Маршрут)
+
                         Tabs\Tab::make('Участники и Маршрут')
                             ->icon('heroicon-o-users')
                             ->schema([
@@ -64,6 +73,7 @@ class WorkflowResource extends Resource
                                     ->addable(fn ($record) => $record === null || $record->user_id === auth()->id())
                                     ->deletable(fn ($record) => $record === null || $record->user_id === auth()->id())
                                     ->reorderable('order_index')
+                                    ->label('Участники')
                                     ->schema([
 
                                         Forms\Components\Select::make('user_id')

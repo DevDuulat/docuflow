@@ -1,0 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@tailwind variants;
+@import '../../../../vendor/filament/filament/resources/css/base.css';
+
+@config 'tailwind.config.js';
+@source '../../../../vendor/guava/calendar/resources/**/*';
+@import '../../../../vendor/guava/calendar/resources/css/theme.css';
