@@ -61,18 +61,15 @@ class WorkflowResource extends Resource
                                         Forms\Components\Select::make('user_id')
                                             ->label('Сотрудник')
                                             ->relationship('user', 'name')
-                                            ->searchable()
-                                            ->preload()
+                                            ->disabled(fn ($record) => filled($record))
                                             ->required(),
-                                          Forms\Components\Select::make('role')
-                                              ->label('Роль')
-                                              ->options(
-                                                  collect(WorkflowUserRole::cases())
-                                                      ->mapWithKeys(fn ($role) => [$role->value => $role->label()])
-                                              )
-                                              ->required()
-                                              ->native(false)
+                                        Forms\Components\Select::make('role')
+                                            ->label('Роль')
+                                            ->options(collect(WorkflowUserRole::cases())->mapWithKeys(fn ($role) => [$role->value => $role->label()]))
                                             ->required(),
+                                        Forms\Components\Placeholder::make('status_display')
+                                            ->label('Текущий статус')
+                                            ->content(fn ($record) => $record?->status?->label() ?? 'Ожидает'),
                                         Forms\Components\TextInput::make('order_index')
                                             ->label('Порядок')
                                             ->numeric()

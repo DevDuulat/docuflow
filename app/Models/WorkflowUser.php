@@ -38,6 +38,24 @@ class WorkflowUser extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function canAction(): bool
+    {
+        // 1. Проверяем, что текущий пользователь — это тот, кто залогинен
+        if ($this->user_id !== auth()->id()) return false;
+
+        // 2. Проверяем, что он еще не совершил действие
+        if ($this->status !== WorkflowUserStatus::Pending) return false;
+
+        // 3. (Опционально) Проверка очереди: может ли он ходить сейчас?
+        // Ищем, есть ли кто-то с меньшим order_index, кто еще не одобрил
+        $previousPending = $this->workflow->workflowUsers()
+            ->where('order_index', '<', $this->order_index)
+            ->where('status', '!=', WorkflowUserStatus::Approved)
+            ->exists();
+
+        return !$previousPending;
+    }
+
     /**
      * Проверка статуса
      */
