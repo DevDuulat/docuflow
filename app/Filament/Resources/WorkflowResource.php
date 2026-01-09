@@ -57,26 +57,38 @@ class WorkflowResource extends Resource
                             ->schema([
                                 Repeater::make('workflowUsers')
                                     ->relationship('workflowUsers')
+                                    ->addable(fn ($record) => $record === null || $record->user_id === auth()->id())
+                                    ->deletable(fn ($record) => $record === null || $record->user_id === auth()->id())
+                                    ->reorderable('order_index')
                                     ->schema([
+
                                         Forms\Components\Select::make('user_id')
                                             ->label('Сотрудник')
                                             ->relationship('user', 'name')
-                                            ->disabled(fn ($record) => filled($record))
-                                            ->required(),
+                                            ->searchable()
+                                            ->preload()
+                                            ->required()
+                                            ->disabled(fn ($record) => static::isNotInitiator($record)),
+
                                         Forms\Components\Select::make('role')
                                             ->label('Роль')
-                                            ->options(collect(WorkflowUserRole::cases())->mapWithKeys(fn ($role) => [$role->value => $role->label()]))
-                                            ->required(),
-                                        Forms\Components\Placeholder::make('status_display')
-                                            ->label('Текущий статус')
-                                            ->content(fn ($record) => $record?->status?->label() ?? 'Ожидает'),
+                                            ->options(WorkflowUserRole::class)
+                                            ->required()
+                                            ->native(false)
+                                            ->disabled(fn ($record) => static::isNotInitiator($record)),
+
                                         Forms\Components\TextInput::make('order_index')
                                             ->label('Порядок')
                                             ->numeric()
-                                            ->default(0),
+                                            ->default(0)
+                                            ->disabled(fn ($record) => static::isNotInitiator($record)),
+
+                                        Forms\Components\Placeholder::make('status_display')
+                                            ->label('Текущий статус')
+                                            ->content(fn ($record) => $record?->status?->label() ?? 'Ожидает')
+                                            ->visible(fn ($record) => $record !== null),
                                     ])
                                     ->columns(3)
-                                    ->reorderable('order_index')
                                     ->addActionLabel('Добавить участника'),
                             ]),
 
@@ -92,6 +104,20 @@ class WorkflowResource extends Resource
                             ]),
                     ])->columnSpanFull(),
             ]);
+    }
+
+    protected static function isNotInitiator($record): bool
+    {
+        // Если мы создаем новую запись (record еще нет), разрешаем редактирование
+        if (!$record) return false;
+
+        // Если это модель WorkflowUser (внутри репитера), берем родительский workflow
+        if ($record instanceof \App\Models\WorkflowUser) {
+            return $record->workflow->user_id !== auth()->id();
+        }
+
+        // Если это сам Workflow
+        return $record->user_id !== auth()->id();
     }
 
     public static function table(Table $table): Table
