@@ -72,7 +72,10 @@ class WorkflowResource extends Resource
 
                                         Forms\Components\Select::make('role')
                                             ->label('Роль')
-                                            ->options(WorkflowUserRole::class)
+                                            ->options(
+                                                collect(WorkflowUserRole::cases())
+                                                    ->mapWithKeys(fn ($role) => [$role->value => $role->label()])
+                                            )
                                             ->required()
                                             ->native(false)
                                             ->disabled(fn ($record) => static::isNotInitiator($record)),
