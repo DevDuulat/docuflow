@@ -18,14 +18,18 @@ class WorkflowResource extends Resource
 {
     protected static ?string $model = Workflow::class;
     protected static ?string $navigationIcon = 'heroicon-o-arrow-path';
-    protected static ?string $navigationLabel = 'Рабочие процессы';
+
     protected static ?string $modelLabel = 'Рабочий процесс';
+
+    protected static ?string $pluralModelLabel = 'Рабочие процессы';
+
+    protected static ?string $navigationLabel = 'Рабочие процессы';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Tabs::make('Workflow Details')
+                Tabs::make('Детали процесса')
                     ->tabs([
                         // ВКЛАДКА 1: Основные настройки
                         Tabs\Tab::make('Настройка процесса')
