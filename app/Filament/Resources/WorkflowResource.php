@@ -103,6 +103,7 @@ class WorkflowResource extends Resource
                                     ->relationship('documents', 'title')
                                     ->multiple()
                                     ->preload()
+                                    ->disabled(fn ($record) => static::isNotInitiator($record))
                                     ->helperText('Эти документы будут отправлены на согласование выбранным участникам'),
                             ]),
                     ])->columnSpanFull(),
@@ -111,15 +112,12 @@ class WorkflowResource extends Resource
 
     protected static function isNotInitiator($record): bool
     {
-        // Если мы создаем новую запись (record еще нет), разрешаем редактирование
         if (!$record) return false;
 
-        // Если это модель WorkflowUser (внутри репитера), берем родительский workflow
         if ($record instanceof \App\Models\WorkflowUser) {
             return $record->workflow->user_id !== auth()->id();
         }
 
-        // Если это сам Workflow
         return $record->user_id !== auth()->id();
     }
 
