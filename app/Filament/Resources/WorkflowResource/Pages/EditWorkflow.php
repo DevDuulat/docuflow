@@ -70,7 +70,8 @@ class EditWorkflow extends EditRecord
                     $this->refreshFormData(['workflowUsers']);
                 }),
 
-            Actions\DeleteAction::make(),
+            Actions\DeleteAction::make()
+                ->visible(fn ($record) => $record->user_id === auth()->id()),
         ];
     }
 

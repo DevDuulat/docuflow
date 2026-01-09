@@ -148,6 +148,8 @@ class WorkflowResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make()
+                    ->visible(fn ($record) => $record->user_id === auth()->id()),
             ]);
     }
 
