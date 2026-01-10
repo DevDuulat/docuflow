@@ -55,11 +55,6 @@ class ChildrenRelationManager extends RelationManager
                 Tables\Actions\CreateAction::make(),
             ])
             ->actions([
-                Tables\Actions\Action::make('open')
-                    ->label('Открыть')
-                    ->icon('heroicon-m-arrow-right-circle')
-          ,
-
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ]);
