@@ -9,7 +9,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Hash;
-
+use pxlrbt\FilamentExcel\Actions\Tables\ExportBulkAction;
 class UserResource extends Resource
 {
     protected static ?string $model = User::class;
@@ -93,7 +93,9 @@ class UserResource extends Resource
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make()
                         ->label('Удалить выбранные'),
+                    ExportBulkAction::make(),
                 ]),
+
             ])
             ->emptyStateHeading('Пользователей пока нет')
             ->emptyStateDescription('Создайте первого пользователя, чтобы начать работу.');

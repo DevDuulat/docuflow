@@ -11,6 +11,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Grid;
+use pxlrbt\FilamentExcel\Actions\Tables\ExportBulkAction;
 
 class DepartmentResource extends Resource
 {
@@ -84,6 +85,7 @@ class DepartmentResource extends Resource
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make()
                         ->label('Удалить выбранные'),
+                    ExportBulkAction::make(),
                 ]),
             ])
             ->emptyStateHeading('Подразделений пока нет')

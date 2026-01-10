@@ -9,6 +9,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Forms\Components\Section;
+use pxlrbt\FilamentExcel\Actions\Tables\ExportBulkAction;
 
 class PositionResource extends Resource
 {
@@ -83,6 +84,7 @@ class PositionResource extends Resource
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+                    ExportBulkAction::make(),
                 ]),
             ])
             ->emptyStateHeading('Список должностей пуст')
