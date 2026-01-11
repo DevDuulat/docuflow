@@ -26,6 +26,14 @@ class WorkflowResource extends Resource
 
     protected static ?string $navigationLabel = 'Рабочие процессы';
 
+    protected static ?string $recordTitleAttribute = 'title';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['title'];
+    }
+
+
     public static function form(Form $form): Form
     {
         return $form

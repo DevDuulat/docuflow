@@ -24,6 +24,12 @@ class FolderResource extends Resource
     protected static ?string $breadcrumb = 'Диск';
     protected static ?string $modelLabel = 'Папка';
     protected static ?string $pluralModelLabel = 'Папки';
+    protected static ?string $recordTitleAttribute = 'name';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['name'];
+    }
 
     public static function form(Form $form): Form
     {
@@ -146,4 +152,6 @@ class FolderResource extends Resource
             'edit' => Pages\EditFolder::route('/{record}/edit'),
         ];
     }
+
+
 }

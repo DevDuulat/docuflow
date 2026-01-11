@@ -8,6 +8,7 @@
     "require": {
         "php": "^8.2",
         "althinect/filament-spatie-roles-permissions": "^2.3",
+        "charrafimed/global-search-modal": "^3.7",
         "filament/filament": "^3.3",
         "guava/calendar": "^1.14",
         "laravel/framework": "^12.0",
