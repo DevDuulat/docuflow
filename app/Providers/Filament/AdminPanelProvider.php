@@ -31,6 +31,8 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->theme(asset('css/filament/admin/theme.css'))
             ->login()
+            ->databaseNotifications()
+            ->databaseNotificationsPolling('20s')
             ->colors([
                 'primary' => Color::Amber,
             ])

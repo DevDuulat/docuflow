@@ -175,6 +175,60 @@ class WorkflowResource extends Resource
             ])
             ->actions([
                 Tables\Actions\ActionGroup::make([
+                    Tables\Actions\Action::make('notify_participants')
+                        ->label('Уведомить участников')
+                        ->icon('heroicon-o-paper-airplane')
+                        ->color('info')
+                        ->requiresConfirmation()
+                        ->action(function (Workflow $record) {
+                            $userIds = \App\Models\WorkflowUser::where('workflow_id', $record->id)
+                                ->pluck('user_id')
+                                ->toArray();
+
+                            // Если здесь будет пусто - значит данные не сохранились в БД
+                            if (empty($userIds)) {
+                                \Filament\Notifications\Notification::make()->title('В базе нет участников!')->danger()->send();
+                                return;
+                            }
+
+
+                            // 1. Обязательно подгружаем участников и их данные пользователей
+                            $participants = $record->workflowUsers()->with('user')->get();
+
+                            if ($participants->isEmpty()) {
+                                \Filament\Notifications\Notification::make()
+                                    ->title('Участники не найдены')
+                                    ->warning()
+                                    ->send();
+                                return;
+                            }
+
+                            $count = 0;
+                            foreach ($participants as $participant) {
+                                $user = $participant->user;
+
+                                // Проверяем, существует ли пользователь и это не сам автор
+                                if ($user && $user->id !== auth()->id()) {
+                                    \Filament\Notifications\Notification::make()
+                                        ->title('Новое задание')
+                                        ->body("Вы назначены участником в процессе: \"{$record->title}\"")
+                                        ->icon('heroicon-o-clipboard-document-check')
+                                        ->actions([
+                                            \Filament\Notifications\Actions\Action::make('view')
+                                                ->label('Открыть')
+                                                ->url(WorkflowResource::getUrl('edit', ['record' => $record]))
+                                        ])
+                                        ->sendToDatabase($user); // Отправка в БД (для колокольчика)
+
+                                    $count++;
+                                }
+                            }
+
+                            \Filament\Notifications\Notification::make()
+                                ->title($count > 0 ? "Уведомления отправлены ($count)" : "Нет получателей")
+                                ->success()
+                                ->send();
+                        }),
                     Tables\Actions\EditAction::make(),
                     Tables\Actions\DeleteAction::make()
                         ->visible(fn ($record) => $record->user_id === auth()->id()),
