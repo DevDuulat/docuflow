@@ -23,6 +23,7 @@ return new class extends Migration
             $table->tinyInteger('status')->default(Status::published->value);
             $table->unsignedTinyInteger('workflow_status')->default(WorkflowStatus::draft->value);
             $table->foreignIdFor(User::class)->constrained()->cascadeOnDelete();
+            $table->softDeletes();
             $table->timestamps();
         });
     }
@@ -32,6 +33,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('workflows');
+        Schema::table('workflows', function (Blueprint $table) {
+            $table->dropSoftDeletes();
+        });
     }
 };
