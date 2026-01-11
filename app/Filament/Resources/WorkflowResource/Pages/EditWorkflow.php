@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\WorkflowResource\Pages;
 
+use App\Enums\WorkflowStatus;
 use App\Filament\Resources\WorkflowResource;
 use App\Enums\WorkflowUserStatus;
 use Filament\Actions;
@@ -17,6 +18,7 @@ class EditWorkflow extends EditRecord
     {
         return [
             // Кнопка СОГЛАСОВАТЬ
+            // Кнопка СОГЛАСОВАТЬ
             Actions\Action::make('approve')
                 ->label('Согласовать')
                 ->color('success')
@@ -27,7 +29,6 @@ class EditWorkflow extends EditRecord
                         ->label('Ваша подпись')
                         ->confirmable()
                         ->required(),
-                    // Добавляем поле комментария, чтобы было откуда брать текст!
                     \Filament\Forms\Components\Textarea::make('comment')
                         ->label('Комментарий')
                         ->required(),
@@ -35,23 +36,51 @@ class EditWorkflow extends EditRecord
                 ->action(function (array $data) {
                     $workflowUser = $this->getCurrentWorkflowUser();
 
+                    // 1. Обновляем статус текущего участника
                     $workflowUser->update([
                         'status' => WorkflowUserStatus::Approved,
                         'acted_at' => now(),
                         'signature' => $data['signature'],
                     ]);
 
+                    // 2. Создаем комментарий
                     $this->record->comments()->create([
                         'user_id' => auth()->id(),
-                        'comment' => "СОГЛАСОВАНО: " . $data['comment'], // Теперь ключ 'comment' совпадает с формой и БД
+                        'comment' => "СОГЛАСОВАНО: " . $data['comment'],
                     ]);
 
-                    Notification::make()
-                        ->title('Успешно согласовано с подписью')
-                        ->success()
-                        ->send();
+                    // 3. ПРОВЕРКА: Все ли согласовали?
+                    // Ищем участников, у которых статус НЕ 'Approved'
+                    $hasPendingParticipants = $this->record->workflowUsers()
+                        ->where('status', '!=', WorkflowUserStatus::Approved)
+                        ->exists();
 
-                    $this->refreshFormData(['workflowUsers']);
+                    if (!$hasPendingParticipants) {
+                        // Если таких нет (все Approved), закрываем весь процесс
+                        $this->record->update([
+                            'workflow_status' => WorkflowStatus::approved,
+                        ]);
+
+                        Notification::make()
+                            ->title('Процесс утвержден')
+                            ->body('Все участники согласовали документ.')
+                            ->success()
+                            ->send();
+                    } else {
+                        // Если кто-то еще остался, переводим из черновика в "рассмотрение"
+                        if ($this->record->workflow_status === WorkflowStatus::draft) {
+                            $this->record->update([
+                                'workflow_status' => WorkflowStatus::in_review,
+                            ]);
+                        }
+
+                        Notification::make()
+                            ->title('Успешно согласовано')
+                            ->success()
+                            ->send();
+                    }
+
+                    $this->refreshFormData(['workflowUsers', 'workflow_status']);
                 }),
 
             // Кнопка ОТКЛОНИТЬ
@@ -63,7 +92,6 @@ class EditWorkflow extends EditRecord
                 ->requiresConfirmation()
                 ->modalHeading('Отклонить процесс?')
                 ->form([
-                    // Здесь подпись обычно не нужна, только причина
                     \Filament\Forms\Components\Textarea::make('comment')
                         ->label('Комментарий/Причина')
                         ->required(),
@@ -71,14 +99,21 @@ class EditWorkflow extends EditRecord
                 ->action(function (array $data) {
                     $workflowUser = $this->getCurrentWorkflowUser();
 
+                    // 1. Обновляем участника
                     $workflowUser->update([
                         'status' => WorkflowUserStatus::Rejected,
                         'acted_at' => now(),
                     ]);
 
+                    // 2. Создаем комментарий
                     $this->record->comments()->create([
                         'user_id' => auth()->id(),
-                        'comment' => "ОТКЛОНЕНО: " . $data['comment'], // Исправлено с 'content' на 'comment'
+                        'comment' => "ОТКЛОНЕНО: " . $data['comment'],
+                    ]);
+
+                    // 3. ЛОГИКА ОТКЛОНЕНИЯ: Если один отклонил, весь процесс - Rejected
+                    $this->record->update([
+                        'workflow_status' => WorkflowStatus::rejected,
                     ]);
 
                     Notification::make()
@@ -86,7 +121,7 @@ class EditWorkflow extends EditRecord
                         ->danger()
                         ->send();
 
-                    $this->refreshFormData(['workflowUsers']);
+                    $this->refreshFormData(['workflowUsers', 'workflow_status']);
                 }),
 
             Actions\DeleteAction::make()
