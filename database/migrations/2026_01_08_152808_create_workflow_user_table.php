@@ -26,6 +26,7 @@ return new class extends Migration
             $table->unsignedTinyInteger('role')->default(WorkflowUserRole::Participant->value);
             $table->integer('order_index')->default(0);
             $table->unsignedTinyInteger('status')->default(WorkflowUserStatus::Pending->value);
+            $table->longText('signature')->nullable();
             $table->timestamp('acted_at')->nullable();
             $table->timestamps();
             $table->unique(['workflow_id', 'user_id']);

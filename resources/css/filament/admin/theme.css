@@ -7,3 +7,4 @@
 @config 'tailwind.config.js';
 @source '../../../../vendor/guava/calendar/resources/**/*';
 @import '../../../../vendor/guava/calendar/resources/css/theme.css';
+@source '../../../../vendor/saade/filament-autograph/resources/views/**/*.blade.php';

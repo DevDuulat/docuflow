@@ -7,6 +7,7 @@ use App\Enums\WorkflowUserStatus;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 use Filament\Notifications\Notification;
+use Saade\FilamentAutograph\Forms\Components\SignaturePad;
 
 class EditWorkflow extends EditRecord
 {
@@ -21,22 +22,39 @@ class EditWorkflow extends EditRecord
                 ->color('success')
                 ->icon('heroicon-o-check-circle')
                 ->visible(fn () => $this->canCurrentUserAction())
-                ->action(function () {
+                ->form([
+                    SignaturePad::make('signature')
+                        ->label('Ваша подпись')
+                        ->confirmable()
+                        ->required(),
+                    // Добавляем поле комментария, чтобы было откуда брать текст!
+                    \Filament\Forms\Components\Textarea::make('comment')
+                        ->label('Комментарий')
+                        ->required(),
+                ])
+                ->action(function (array $data) {
                     $workflowUser = $this->getCurrentWorkflowUser();
 
                     $workflowUser->update([
                         'status' => WorkflowUserStatus::Approved,
                         'acted_at' => now(),
+                        'signature' => $data['signature'],
+                    ]);
+
+                    $this->record->comments()->create([
+                        'user_id' => auth()->id(),
+                        'comment' => "СОГЛАСОВАНО: " . $data['comment'], // Теперь ключ 'comment' совпадает с формой и БД
                     ]);
 
                     Notification::make()
-                        ->title('Успешно согласовано')
+                        ->title('Успешно согласовано с подписью')
                         ->success()
                         ->send();
 
                     $this->refreshFormData(['workflowUsers']);
                 }),
 
+            // Кнопка ОТКЛОНИТЬ
             Actions\Action::make('reject')
                 ->label('Отклонить')
                 ->color('danger')
@@ -45,6 +63,7 @@ class EditWorkflow extends EditRecord
                 ->requiresConfirmation()
                 ->modalHeading('Отклонить процесс?')
                 ->form([
+                    // Здесь подпись обычно не нужна, только причина
                     \Filament\Forms\Components\Textarea::make('comment')
                         ->label('Комментарий/Причина')
                         ->required(),
@@ -59,7 +78,7 @@ class EditWorkflow extends EditRecord
 
                     $this->record->comments()->create([
                         'user_id' => auth()->id(),
-                        'content' => "ОТКЛОНЕНО: " . $data['comment'],
+                        'comment' => "ОТКЛОНЕНО: " . $data['comment'], // Исправлено с 'content' на 'comment'
                     ]);
 
                     Notification::make()
@@ -75,9 +94,6 @@ class EditWorkflow extends EditRecord
         ];
     }
 
-    /**
-     * Вспомогательный метод: получаем запись текущего пользователя в этом процессе
-     */
     protected function getCurrentWorkflowUser()
     {
         return $this->record->workflowUsers()
@@ -89,7 +105,6 @@ class EditWorkflow extends EditRecord
     protected function canCurrentUserAction(): bool
     {
         $currentUser = $this->getCurrentWorkflowUser();
-
         if (!$currentUser) return false;
 
         $hasPendingBefore = $this->record->workflowUsers()

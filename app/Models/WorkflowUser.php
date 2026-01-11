@@ -18,6 +18,7 @@ class WorkflowUser extends Model
         'user_id',
         'role',
         'order_index',
+        'signature',
         'status',
         'acted_at',
     ];
@@ -26,6 +27,10 @@ class WorkflowUser extends Model
         'role' => WorkflowUserRole::class,
         'status' => WorkflowUserStatus::class,
         'acted_at' => 'datetime',
+    ];
+
+    protected $hidden = [
+        'signature',
     ];
 
     public function workflow()
