@@ -34,6 +34,7 @@ class WorkflowResource extends Resource
     }
 
 
+    // ... в начале класса
     public static function form(Form $form): Form
     {
         return $form
@@ -49,41 +50,48 @@ class WorkflowResource extends Resource
                                         Forms\Components\TextInput::make('title')
                                             ->label('Тема процесса')
                                             ->required()
-                                            ->live(onBlur: true) // Отправляет данные на сервер при потере фокуса
-                                            ->afterStateUpdated(fn (Set $set, ?string $state) => $set('slug', Str::slug($state))),
+                                            ->live(onBlur: true)
+                                            ->afterStateUpdated(fn (Set $set, ?string $state) => $set('slug', Str::slug($state)))
+                                            // Блокируем, если не инициатор
+                                            ->disabled(fn ($record) => static::isNotInitiator($record)),
 
                                         Forms\Components\TextInput::make('slug')
                                             ->label('Технический адрес (Slug)')
                                             ->required()
                                             ->unique(ignoreRecord: true)
-                                            ->disabled() // Пользователь видит, но не может менять вручную
+                                            ->disabled()
                                             ->dehydrated(),
+
                                         Forms\Components\Select::make('workflow_status')
                                             ->label('Статус процесса')
-                                            // Используем метод label() вашего Enum
                                             ->options(collect(WorkflowStatus::cases())->mapWithKeys(fn ($s) => [$s->value => $s->label()]))
                                             ->required()
-                                            ->native(false),
+                                            ->native(false)
+                                            // Блокируем, если не инициатор
+                                            ->disabled(fn ($record) => static::isNotInitiator($record)),
+
                                         Forms\Components\DatePicker::make('due_date')
-                                            ->label('Срок исполнения'),
+                                            ->label('Срок исполнения')
+                                            ->disabled(fn ($record) => static::isNotInitiator($record)),
+
                                         Forms\Components\Textarea::make('note')
                                             ->label('Описание/Задача')
-                                            ->columnSpanFull(),
+                                            ->columnSpanFull()
+                                            ->disabled(fn ($record) => static::isNotInitiator($record)),
                                     ]),
                             ]),
-
 
                         Tabs\Tab::make('Участники и Маршрут')
                             ->icon('heroicon-o-users')
                             ->schema([
                                 Repeater::make('workflowUsers')
                                     ->relationship('workflowUsers')
+                                    // Запрещаем добавлять и удалять строки, если не автор
                                     ->addable(fn ($record) => $record === null || $record->user_id === auth()->id())
                                     ->deletable(fn ($record) => $record === null || $record->user_id === auth()->id())
                                     ->reorderable('order_index')
                                     ->label('Участники')
                                     ->schema([
-
                                         Forms\Components\Select::make('user_id')
                                             ->label('Сотрудник')
                                             ->relationship('user', 'name')
@@ -94,10 +102,7 @@ class WorkflowResource extends Resource
 
                                         Forms\Components\Select::make('role')
                                             ->label('Роль')
-                                            ->options(
-                                                collect(WorkflowUserRole::cases())
-                                                    ->mapWithKeys(fn ($role) => [$role->value => $role->label()])
-                                            )
+                                            ->options(collect(WorkflowUserRole::cases())->mapWithKeys(fn ($role) => [$role->value => $role->label()]))
                                             ->required()
                                             ->native(false)
                                             ->disabled(fn ($record) => static::isNotInitiator($record)),
@@ -125,8 +130,8 @@ class WorkflowResource extends Resource
                                     ->relationship('documents', 'title')
                                     ->multiple()
                                     ->preload()
-                                    ->disabled(fn ($record) => static::isNotInitiator($record))
-                                    ->helperText('Эти документы будут отправлены на согласование выбранным участникам'),
+                                    // Блокируем выбор документов
+                                    ->disabled(fn ($record) => static::isNotInitiator($record)),
                             ]),
                     ])->columnSpanFull(),
             ]);
