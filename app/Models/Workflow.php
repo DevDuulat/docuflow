@@ -19,6 +19,10 @@ class Workflow extends Model implements Eventable
         'title', 'slug', 'note', 'due_date', 'workflow_status', 'status', 'user_id'
     ];
 
+    protected $casts = [
+        'due_date' => 'date',
+    ];
+
     public function getRouteKeyName()
     {
         return 'slug';
