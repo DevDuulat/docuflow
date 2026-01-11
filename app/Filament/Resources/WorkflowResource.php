@@ -141,28 +141,46 @@ class WorkflowResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('title')
                     ->label('Тема')
-                    ->searchable(),
+                    ->searchable()
+                    ->weight('bold')
+                    ->description(fn ($record) => $record->category?->name),
+
                 Tables\Columns\TextColumn::make('workflow_status')
                     ->label('Статус')
                     ->badge()
                     ->formatStateUsing(fn ($state) => WorkflowStatus::from($state)->label())
                     ->color(fn ($state) => WorkflowStatus::from($state)->color()),
+
                 Tables\Columns\TextColumn::make('due_date')
                     ->label('Срок')
                     ->date('d.m.Y')
-                    ->sortable(),
+                    ->sortable()
+                    ->color(fn ($record) => $record->due_date?->isPast() ? 'danger' : 'gray'),
+
                 Tables\Columns\TextColumn::make('user.name')
-                    ->label('Инициатор'),
+                    ->label('Инициатор')
+                    ->searchable()
+                    ->toggleable()
+                    ->icon('heroicon-m-user'),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('workflow_status')
-                    ->options(collect(WorkflowStatus::cases())->mapWithKeys(fn ($s) => [$s->value => $s->label()])),
+                    ->label('Статус выполнения')
+                    ->multiple()
+                    ->options(WorkflowStatus::class),
+
+                Tables\Filters\Filter::make('is_mine')
+                    ->label('Мои записи')
+                    ->query(fn ($query) => $query->where('user_id', auth()->id())),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make()
-                    ->visible(fn ($record) => $record->user_id === auth()->id()),
-            ]);
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\EditAction::make(),
+                    Tables\Actions\DeleteAction::make()
+                        ->visible(fn ($record) => $record->user_id === auth()->id()),
+                ]),
+            ])
+            ->defaultSort('due_date', 'asc');
     }
 
     public static function getRelations(): array
